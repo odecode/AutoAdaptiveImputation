@@ -123,8 +123,12 @@ float calc_row_mean(int row, int* matrix){
         
         // mean = matrix[row][i] != 0 ? mean+1 : mean;
         // index = matrix[row][i] != 0 ? index+1 : index;
-        mean = matrix[row*nitems+i] != 0 ? mean+1 : mean;
-        index = matrix[row*nitems+i] != 0 ? index+1 : mean;
+        
+        int increment1 = mean+1;
+        int increment2 = index+1;
+
+        mean = matrix[row*nitems+i] != 0 ? increment1 : mean;
+        index = matrix[row*nitems+i] != 0 ? increment2 : mean;
         
         
         // if(matrix[row][i] != 0){
