@@ -409,26 +409,23 @@ int main(){
     Calculate Mean Absolute Error of n (2000) predicted ratings 
     */
     duration<double> total_time = duration_cast<duration<double>>(stop-stop);
-    while(index <= 100){
-    //    int user = test_users[index-1][0];
-    //    int item = test_users[index-1][1];
-       int user = test_users[(index-1)*3+0];
-       int item = test_users[(index-1)*3+1];
-       //int real_rating = test_users[index-1][2];
-       int real_rating = test_users[(index-1)*3+2];
+    while(index <= 50){
+       int user = test_users[index-1][0];
+       int item = test_users[index-1][1];
+       int real_rating = test_users[index-1][2];
        start = high_resolution_clock::now();
        float pred = predict_rating(user,item,rating_matrix,test_users_unique,simlist);
        stop = high_resolution_clock::now();
        time_span = duration_cast<duration<double>>(stop-start);
        total_time += time_span;
-       cout << "Prediction " << index << " real rating " << real_rating << " predicted rating " << pred << " in " << time_span.count() << " seconds" << endl;
+       cout << "-" << index << ": real rating " << real_rating << " predicted rating " << pred << " Time "<< time_span.count() << endl;
        float diff = abs(float(real_rating-pred));
        MAE += diff;
        index++; 
     }
     MAE = MAE/float(index);
     cout << "MAE " << MAE << endl;
-    cout << "Total time " << total_time.count() << endl;
+    cout << "Total time" << total_time.count() << endl;
 
 
 }
