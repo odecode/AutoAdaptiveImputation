@@ -410,9 +410,9 @@ int main(){
     */
     duration<double> total_time = duration_cast<duration<double>>(stop-stop);
     while(index <= 50){
-       int user = test_users[index-1][0];
-       int item = test_users[index-1][1];
-       int real_rating = test_users[index-1][2];
+       int user = test_users[(index-1)*3+0];
+       int item = test_users[(index-1)*3+1];
+       int real_rating = test_users[(index-1)*3+2];
        start = high_resolution_clock::now();
        float pred = predict_rating(user,item,rating_matrix,test_users_unique,simlist);
        stop = high_resolution_clock::now();
@@ -425,7 +425,7 @@ int main(){
     }
     MAE = MAE/float(index);
     cout << "MAE " << MAE << endl;
-    cout << "Total time" << total_time.count() << endl;
+    cout << "Total time " << total_time.count() << endl;
 
 
 }
