@@ -238,8 +238,8 @@ vector<int> get_related_users(int user, int item, int** matrix, int test_users[]
         bool related = true;
         if(user != i){
 
-            //related = matrix[i][item] == 0 ? false : true;
-            related = matrix[i*nitems+item] == 0 ? false : true;
+            related = matrix[i][item] == 0 ? false : true;
+            // related = matrix[i*nitems+item] == 0 ? false : true;
             //if(matrix[i][item] == 0){related = false;}
             if(related){rel_users.push_back(i);}
         }
@@ -257,10 +257,10 @@ vector<int> get_related_items(int user, int item, int** matrix, vector<int> rel_
     for(int i = 0; i < rel_use.size(); i++){
         for(int j = 0; j < nitems; j++){
             int user2 = rel_use[i];
-            //if(matrix[user2][j] != 0 && matrix[user][j] != 0){rel_it.insert(j);}
-            if(matrix[user2*nitems+j] != 0 && matrix[user*nitems+j] != 0){
-                rel_it.insert(j);
-            }
+            if(matrix[user2][j] != 0 && matrix[user][j] != 0){rel_it.insert(j);}
+            // if(matrix[user2*nitems+j] != 0 && matrix[user*nitems+j] != 0){
+            //     rel_it.insert(j);
+            // }
         } 
     }
 
@@ -434,8 +434,11 @@ int main(){
     duration<double> total_time = duration_cast<duration<double>>(stop-stop);
     while(index <= 50){
         int user = test_users[index-1][0];
+        cout << "access user\n";
         int item = test_users[index-1][1];
+        cout << "access item\n";
         int real_rating = test_users[index-1][2];
+        cout << "access rating\n";
     
     //    int user = test_users[(index-1)*3+0];
     //    int item = test_users[(index-1)*3+1];
