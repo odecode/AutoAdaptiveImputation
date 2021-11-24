@@ -174,10 +174,10 @@ float sim(int u, int v, int** matrix){
     float sum_below = 0.0;  //denominator
     //for every item in T, calculate (rating from u - mean_rating_u)*(rating from v - mean_rating v)
     for(int n = 0; n < T.size(); n++){
-        // sum_above += ((matrix[u][T[n]] - mean_u)*(matrix[v][T[n]]-mean_v));
-        // sum_below += sqrt((pow((matrix[u][T[n]] - mean_u),2))*(pow((matrix[v][T[n]] - mean_v),2)));
-        sum_above += ((matrix[u*nitems+T[n]] -mean_u)*(matrix[v*nitems+T[n]]-mean_v));
-        sum_below += sqrt((pow((matrix[u*nitems+T[n]]- mean_u),2))*(pow((matrix[v*nitems+T[n]] - mean_v),2)));
+        sum_above += ((matrix[u][T[n]] - mean_u)*(matrix[v][T[n]]-mean_v));
+        sum_below += sqrt((pow((matrix[u][T[n]] - mean_u),2))*(pow((matrix[v][T[n]] - mean_v),2)));
+        // sum_above += ((matrix[u*nitems+T[n]] -mean_u)*(matrix[v*nitems+T[n]]-mean_v));
+        // sum_below += sqrt((pow((matrix[u*nitems+T[n]]- mean_u),2))*(pow((matrix[v*nitems+T[n]] - mean_v),2)));
     }
     //if(sum_below == 0.0){sum_below =0.001;}
     sum_below = sum_below == 0.0 ? 0.001 : sum_below;
@@ -289,7 +289,7 @@ vector<vector<int>> get_key_neighbors(int user, int item, int** matrix,int test_
         if(key_neighbors.size() == size){break;}
         for(int j = 0; j < related_items.size(); j++){
             if(key_neighbors.size() == size){break;}
-            vector<int> arr = {related_users[i],related_items[j],matrix[i*nitems+j]};
+            vector<int> arr = {related_users[i],related_items[j],matrix[i][j]};
             key_neighbors.push_back(arr);
         }
     }
@@ -321,7 +321,12 @@ float** imputate_matrix(int user, int item, int** matrix,int test_users[], map<p
     float** impmatrix = (float**) malloc(nusers*sizeof(float*));
     float* impb = (float*) malloc(nusers*nitems*sizeof(float));
     for(int i = 0; i < nusers; ++i){
-        impmatrix[i][j] = float(matrix[i][j]);
+        impmatrix[i] = impb + i*nitems;
+    }
+    for(int i = 0; i < nusers; ++i){
+        for(int j = 0; j < nitems; ++j){
+            impmatrix[i][j] = float(matrix[i][j]);
+        }
     }
     for(int i = 0; i < key_neigh.size(); i++){
         vector<int> entry = key_neigh[i];
