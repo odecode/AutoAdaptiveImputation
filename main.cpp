@@ -388,7 +388,7 @@ float predict_rating(int user,int item, int* matrix, int test_users[], map<pair<
 
 }
 
-int main(){
+int main(int argc, char** argv){
     cout<< "hello world" << endl;
     int* rating_matrix = create_matrix();
     cout << "created matrix\n";
@@ -404,12 +404,15 @@ int main(){
     for(int i=0;i<nusers;i++){test_users_unique[i]=i;}
     int index = 1;
     float MAE = 0.0;
-
+    int maxloops = 50;
+    if(argc > 1){
+        maxloops =atoi(argv[1]);
+    }
     /*
     Calculate Mean Absolute Error of n (2000) predicted ratings 
     */
     duration<double> total_time = duration_cast<duration<double>>(stop-stop);
-    while(index <= 50){
+    while(index <= maxloops){
        int user = test_users[(index-1)*3+0];
        int item = test_users[(index-1)*3+1];
        int real_rating = test_users[(index-1)*3+2];
