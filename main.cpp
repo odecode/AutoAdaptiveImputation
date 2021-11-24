@@ -296,38 +296,53 @@ vector<vector<int>> get_key_neighbors(int user, int item, float** matrix,int tes
     return key_neighbors;
 }
 
-float** imputate_matrix(int user, int item, float** matrix,int test_users[], map<pair<int,int>,float> simlist){
+float** impmat;
+bool calledbefore = false;
+bool* callptr = &calledbefore;
+
+bool* getcallbefore(){
+    return callptr;
+}
+
+void setcallbefore(bool* callpt){
+    callpt = (bool*)true;
+}
+
+float** getimpmatrix(bool* calledb4, float** matrix){
+    if(*calledb4 == true){
+    return impmat;
+    }
+    else{
+        *calledb4 = true;
+        impmat = (float**) malloc(nusers*sizeof(float*));
+        float* impb = (float*) malloc(nusers*nitems*sizeof(float));
+        for(int i = 0; i < nusers; ++i){
+            impmat[i] = impb + i*nitems;
+        }
+        for(int i = 0; i < nusers; ++i){
+            for(int j = 0; j < nitems; ++j){
+                impmat[i][j] = matrix[i][j];
+            }
+        }
+        return impmat;
+    }
+}
+
+// void setimpmat(float** matrix){
+//     impmat = matrix;
+// }
+
+float** imputate_matrix(int user, int item, float** matrix,int test_users[], map<pair<int,int>,float> simlist,bool* calledbefore){
     /*
     Matrix imputation function
     */
     
     // find key neighbors of target user and item
     vector<vector<int>> key_neigh = get_key_neighbors(user,item,matrix,test_users,nitems);
-    // float** impmatrix =new float*[nusers];
-    // for(int i = 0; i < nusers; i++){
-    //     impmatrix[i] = new float[nitems];
-    //     for(int j = 0; j < nitems; j++){
-    //         impmatrix[i][j] = float(matrix[i][j]);
-    //     }
-    // }
+    float** impmatrix = getimpmatrix(calledbefore,matrix);
+    
 
-    // float* impmatrix = new float[nusers*nitems*sizeof(float)];
-    // for(int i = 0; i < nusers; ++i){
-    //     for(int j = 0; j < nitems; ++j){
-    //         impmatrix[i*nitems+j] = float(matrix[i*nitems+j]);
-    //     }
-    // }
 
-    float** impmatrix = (float**) malloc(nusers*sizeof(float*));
-    float* impb = (float*) malloc(nusers*nitems*sizeof(float));
-    for(int i = 0; i < nusers; ++i){
-        impmatrix[i] = impb + i*nitems;
-    }
-    for(int i = 0; i < nusers; ++i){
-        for(int j = 0; j < nitems; ++j){
-            impmatrix[i][j] = matrix[i][j];
-        }
-    }
     for(int i = 0; i < key_neigh.size(); i++){
         vector<int> entry = key_neigh[i];
         int rating = entry[2];
@@ -376,11 +391,12 @@ float predict_rating(int user,int item, float** matrix, int test_users[], map<pa
     int rating = matrix[user][item];
     //int rating = matrix[user*nitems+item];
     if( rating != 0){
-        cout << "Rating already observed" << endl;
+        std::cout << "Rating already observed" << endl;
         return float(rating);
     }
     else{
-        float** imp_matrix = imputate_matrix(user,item,matrix,test_users,simlist);
+        bool* calledb4 = getcallbefore();
+        float** imp_matrix = imputate_matrix(user,item,matrix,test_users,simlist,calledb4);
         vector<vector<int>> P = get_key_neighbors(user,item,matrix,test_users,nitems);
         float sum_above = 0.0;
         float sum_below = 0.0;
@@ -405,13 +421,13 @@ float predict_rating(int user,int item, float** matrix, int test_users[], map<pa
         // for(int i = 0; i < nusers; i++){
         //     delete[] imp_matrix[i];
         // }
-        delete[] imp_matrix;
+        //delete[] imp_matrix;
         return predicted_rating;
     }
 
 }
 
-int main(){
+int main(int argc, char** argv){
     cout<< "hello world" << endl;
     float** rating_matrix = create_matrix();
     cout << "created matrix\n";
@@ -427,12 +443,15 @@ int main(){
     for(int i=0;i<nusers;i++){test_users_unique[i]=i;}
     int index = 1;
     float MAE = 0.0;
-
+    int maxloops = 50;
+    if(argc > 1){
+        maxloops =atoi(argv[1]);
+    }
     /*
     Calculate Mean Absolute Error of n (2000) predicted ratings 
     */
     duration<double> total_time = duration_cast<duration<double>>(stop-stop);
-    while(index <= 50){
+    while(index <= maxloops){
         
         int user = test_users[index-1][0];
         
