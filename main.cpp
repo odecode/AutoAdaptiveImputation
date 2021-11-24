@@ -433,13 +433,13 @@ int main(){
     */
     duration<double> total_time = duration_cast<duration<double>>(stop-stop);
     while(index <= 50){
-        cout << "asd\n";
+        
         int user = test_users[index-1][0];
-        cout << "access user\n";
+        
         int item = test_users[index-1][1];
-        cout << "access item\n";
+        
         int real_rating = test_users[index-1][2];
-        cout << "access rating\n";
+        
     
     //    int user = test_users[(index-1)*3+0];
     //    int item = test_users[(index-1)*3+1];
