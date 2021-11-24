@@ -133,15 +133,15 @@ float calc_row_mean(int row, int** matrix){
     int index = 0.0;
     for(int i = 0; i < nitems; i++){
         
-        // mean = matrix[row][i] != 0 ? mean+1 : mean;
-        // index = matrix[row][i] != 0 ? index+1 : index;
         
         int increment1 = mean+1;
         int increment2 = index+1;
 
-        mean = matrix[row*nitems+i] != 0 ? increment1 : mean;
-        index = matrix[row*nitems+i] != 0 ? increment2 : mean;
+        // mean = matrix[row*nitems+i] != 0 ? increment1 : mean;
+        // index = matrix[row*nitems+i] != 0 ? increment2 : mean;
         
+        mean = matrix[row][i] != 0 ? increment1 : mean;
+        index = matrix[row][i] != 0 ? increment2 : index;
         
         // if(matrix[row][i] != 0){
         //     mean += matrix[row][i];
@@ -157,16 +157,16 @@ float sim(int u, int v, int** matrix){
         Calculate Pearson correlation coefficient between user u and user v
         BUG: Sometimes divides by zero. Circumvented by setting denominator to 0.001 if it is 0
     */
-    
+    //cout << "entered sim\n";
     vector<int> T;
     // find all co-rated items between u and v, store in vector T
     for(int i = 0; i < nitems; i++){
-        // if(matrix[u][i] != 0 && matrix[v][i] != 0){
-        //     T.push_back(i);
-        // }
-        if(matrix[u*nitems+i] != 0 && matrix[v*nitems+i] != 0){
+        if(matrix[u][i] != 0 && matrix[v][i] != 0){
             T.push_back(i);
         }
+        // if(matrix[u*nitems+i] != 0 && matrix[v*nitems+i] != 0){
+        //     T.push_back(i);
+        // }
     }
     float mean_u = calc_row_mean(u,matrix);
     float mean_v = calc_row_mean(v,matrix);
@@ -433,6 +433,7 @@ int main(){
     */
     duration<double> total_time = duration_cast<duration<double>>(stop-stop);
     while(index <= 50){
+        cout << "asd\n";
         int user = test_users[index-1][0];
         cout << "access user\n";
         int item = test_users[index-1][1];
