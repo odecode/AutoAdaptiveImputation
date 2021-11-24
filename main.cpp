@@ -17,7 +17,7 @@ const int lines = 100000;   //number of ratings in data set//
 
 
 
-int** create_matrix(){
+float** create_matrix(){
     /*
     Create the user-item rating matrix
     reads in lines from MovieLens data file
@@ -40,8 +40,8 @@ int** create_matrix(){
     //     }
     // }
 
-    int **matrix = (int **) malloc(nusers*sizeof(int *));
-    int * matb = (int *) malloc(nusers*nitems*sizeof(int));
+    float **matrix = (float **) malloc(nusers*sizeof(float *));
+    float * matb = (float *) malloc(nusers*nitems*sizeof(float));
     for(int i = 0; i < nusers; i++){
         matrix[i] = matb + i*nitems;
     }
@@ -58,7 +58,7 @@ int** create_matrix(){
         getline(ss,strrating,'\t');
         int user = stoi(row); // convert string to integer
         int item = stoi(col);
-        int rating = stoi(strrating);
+        float rating = stof(strrating);
         user--; // user numbers range from 1-943, while matrix indices range from 0-942. Subtract 1 from user to align with index
         item--; // same as user
         //matrix[user][item] = rating;
@@ -69,7 +69,7 @@ int** create_matrix(){
     return matrix;
 }
 
-int** create_test_user_list(int** matrix){
+float** create_test_user_list(float** matrix){
     /*
     Set aside 20k ratings as test data,
     remove these ratings from rating matrix
@@ -91,8 +91,8 @@ int** create_test_user_list(int** matrix){
     //     }
     // }
 
-    int** test_users = (int**) malloc(20000*sizeof(int *));
-    int* testb = (int*) malloc(20000*3*sizeof(int*));
+    float** test_users = (float**) malloc(20000*sizeof(float *));
+    float* testb = (float*) malloc(20000*3*sizeof(float*));
     for(int i = 0; i < 20000; i++){
         test_users[i] = testb + i*3;
     }
@@ -108,13 +108,13 @@ int** create_test_user_list(int** matrix){
             getline(ss,strrating,'\t');
             int user = stoi(row);
             int item = stoi(col);
-            int rating = stoi(strrating);
+            float rating = stof(strrating);
             user--;
             item--;
             test_users[linenum][0] = user;
             test_users[linenum][1] = item;
             test_users[linenum][2] = rating;
-            matrix[user][item] = 0;
+            matrix[user][item] = 0.0f;
             // test_users[linenum*3+0] = user;
             // test_users[linenum*3+1] = item;
             // test_users[linenum*3+2] = rating;
@@ -127,10 +127,10 @@ int** create_test_user_list(int** matrix){
     return test_users;
 }
 
-float calc_row_mean(int row, int** matrix){
+float calc_row_mean(int row, float** matrix){
     // calculate mean rating for a user
-    float mean = 0.0;
-    int index = 0.0;
+    float mean = 0.0f;
+    float index = 0.0f;
     for(int i = 0; i < nitems; i++){
         
         
@@ -152,7 +152,7 @@ float calc_row_mean(int row, int** matrix){
     return mean;
 }
 
-float sim(int u, int v, int** matrix){
+float sim(int u, int v, float** matrix){
     /*
         Calculate Pearson correlation coefficient between user u and user v
         BUG: Sometimes divides by zero. Circumvented by setting denominator to 0.001 if it is 0
@@ -161,7 +161,7 @@ float sim(int u, int v, int** matrix){
     vector<int> T;
     // find all co-rated items between u and v, store in vector T
     for(int i = 0; i < nitems; i++){
-        if(matrix[u][i] != 0 && matrix[v][i] != 0){
+        if(matrix[u][i] != 0.0f && matrix[v][i] != 0.0f){
             T.push_back(i);
         }
         // if(matrix[u*nitems+i] != 0 && matrix[v*nitems+i] != 0){
@@ -170,8 +170,8 @@ float sim(int u, int v, int** matrix){
     }
     float mean_u = calc_row_mean(u,matrix);
     float mean_v = calc_row_mean(v,matrix);
-    float sum_above = 0.0; //numerator
-    float sum_below = 0.0;  //denominator
+    float sum_above = 0.0f; //numerator
+    float sum_below = 0.0f;  //denominator
     //for every item in T, calculate (rating from u - mean_rating_u)*(rating from v - mean_rating v)
     for(int n = 0; n < T.size(); n++){
         sum_above += ((matrix[u][T[n]] - mean_u)*(matrix[v][T[n]]-mean_v));
@@ -180,12 +180,12 @@ float sim(int u, int v, int** matrix){
         // sum_below += sqrt((pow((matrix[u*nitems+T[n]]- mean_u),2))*(pow((matrix[v*nitems+T[n]] - mean_v),2)));
     }
     //if(sum_below == 0.0){sum_below =0.001;}
-    sum_below = sum_below == 0.0 ? 0.001 : sum_below;
+    sum_below = sum_below == 0.0f ? 0.001f : sum_below;
     float sim = sum_above/sum_below;
     return sim;
 }
 
-map<pair<int,int>,float> create_simlist(int** matrix){
+map<pair<int,int>,float> create_simlist(float** matrix){
     /*
     similarity measures between all pairs of users.
     Store as (user1,user2): sim
@@ -227,7 +227,7 @@ map<pair<int,int>,float> create_simlist(int** matrix){
     return simlist;
 }
 
-vector<int> get_related_users(int user, int item, int** matrix, int test_users[]){
+vector<int> get_related_users(int user, int item, float** matrix, int test_users[]){
     /*
     Find all related users to target user
     Related users are all users who have rated target item
@@ -247,7 +247,7 @@ vector<int> get_related_users(int user, int item, int** matrix, int test_users[]
     return rel_users;
 }
 
-vector<int> get_related_items(int user, int item, int** matrix, vector<int> rel_use){
+vector<int> get_related_items(int user, int item, float** matrix, vector<int> rel_use){
     /*
     Find all related items to target item
     Related items are items which target user and a related user has rated
@@ -275,7 +275,7 @@ vector<int> get_related_items(int user, int item, int** matrix, vector<int> rel_
 
 }
 
-vector<vector<int>> get_key_neighbors(int user, int item, int** matrix,int test_users[],int size){
+vector<vector<int>> get_key_neighbors(int user, int item, float** matrix,int test_users[],int size){
     /*
     Find key neighbors
     Key neighbors are vectors of (user,item,rating) from related users to related items
@@ -289,14 +289,14 @@ vector<vector<int>> get_key_neighbors(int user, int item, int** matrix,int test_
         if(key_neighbors.size() == size){break;}
         for(int j = 0; j < related_items.size(); j++){
             if(key_neighbors.size() == size){break;}
-            vector<int> arr = {related_users[i],related_items[j],matrix[i][j]};
+            vector<int> arr = {related_users[i],related_items[j],(int)matrix[i][j]};
             key_neighbors.push_back(arr);
         }
     }
     return key_neighbors;
 }
 
-float** imputate_matrix(int user, int item, int** matrix,int test_users[], map<pair<int,int>,float> simlist){
+float** imputate_matrix(int user, int item, float** matrix,int test_users[], map<pair<int,int>,float> simlist){
     /*
     Matrix imputation function
     */
@@ -325,7 +325,7 @@ float** imputate_matrix(int user, int item, int** matrix,int test_users[], map<p
     }
     for(int i = 0; i < nusers; ++i){
         for(int j = 0; j < nitems; ++j){
-            impmatrix[i][j] = float(matrix[i][j]);
+            impmatrix[i][j] = matrix[i][j];
         }
     }
     for(int i = 0; i < key_neigh.size(); i++){
@@ -367,7 +367,7 @@ key_neigh.clear();
 return impmatrix;
 }
 
-float predict_rating(int user,int item, int** matrix, int test_users[], map<pair<int,int>,float> simlist){
+float predict_rating(int user,int item, float** matrix, int test_users[], map<pair<int,int>,float> simlist){
     /*
     Predicts rating from target user to target item
     Find Key neighbors, imputate matrix with artificial ratings, calculate predicted rating according to formula
@@ -413,9 +413,9 @@ float predict_rating(int user,int item, int** matrix, int test_users[], map<pair
 
 int main(){
     cout<< "hello world" << endl;
-    int** rating_matrix = create_matrix();
+    float** rating_matrix = create_matrix();
     cout << "created matrix\n";
-    int** test_users = create_test_user_list(rating_matrix);
+    float** test_users = create_test_user_list(rating_matrix);
     cout << "created test users\n";
     auto start = high_resolution_clock::now();
     pair<int, int> *pairs = new pair<int,int>[888306];
