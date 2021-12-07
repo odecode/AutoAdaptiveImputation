@@ -157,6 +157,7 @@ relatedItems get_related_items(int* user, int* item, int** matrix, relatedUsers 
     relItems.rel_items_size = relitemsnewsize;
     relItems.item = item;
     free(rel_items);
+    free(rel_items_no_duplicates);
     //free(rel_items_no_duplicates);
     //cout << "exiting rel items\n";
     return relItems;
