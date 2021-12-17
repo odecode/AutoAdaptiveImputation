@@ -2,6 +2,7 @@
 #include <algorithm>
 #include <fstream>
 #include <string>
+#include <omp.h>
 using namespace std;
 
 // const int nusers = 943; // number of users in matrix
@@ -35,6 +36,7 @@ relatedUsers get_related_users(int *user, int *item, int** matrix, int nusers, i
     //cout << "in get rel users 2\n";
     int reluserssize = 0;
     // i == "user2"
+    #pragma omp parallel for
     for(int i = 0; i < nusers; i++){
         bool related = true;
         if(*user != i){
@@ -110,9 +112,12 @@ relatedItems get_related_items(int* user, int* item, int** matrix, relatedUsers 
     
     int usr = *user;
     int relitemssize = 0;
+    
     for(int i = 0; i < rel_use.rel_users_size; i++){
         for(int j = 0; j < nitems; j++){
+            
             int user2 = rel_use.rel_users[i];
+            
             if(matrix[user2][j] != 0 && matrix[usr][j] != 0){
                 //cout << "entering isalreadyin" << endl;
                 bool isalready = isalreadyin(rel_items,relitemssize+1,j);
@@ -150,6 +155,7 @@ relatedItems get_related_items(int* user, int* item, int** matrix, relatedUsers 
     // turn set into vector for easier processing
     relatedItems relItems;
     relItems.rel_items = (int*) malloc(relitemsnewsize*sizeof(int));
+    //#pragma openmp parallel for
     for(int i = 0; i < relitemsnewsize; i++){
         relItems.rel_items[i] = rel_items_no_duplicates[i];
         //cout << "related items " << i << " = " << relItems.rel_items[i] << endl;

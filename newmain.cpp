@@ -9,6 +9,7 @@
 #include <chrono>
 #include <set>
 #include <malloc.h>
+#include <omp.h>
 #include "users.h"
 #include "ratingmatrices.h"
 #include "related.h"
@@ -158,7 +159,7 @@ float** imputate_matrix(int* user, int* item, int** matrix, map<pair<int,int>,fl
     }
     int key_neigh_size_users_size = key_neigh.rel_users.rel_users_size;
     int key_neigh_size_items_size = key_neigh.rel_items.rel_items_size;
-
+    //#pragma omp parallel for
     for(int key_neighbor_user1 = 0; key_neighbor_user1 < key_neigh_size_users_size; key_neighbor_user1++){
         for (int  key_neighbor_item1 = 0; key_neighbor_item1 < key_neigh_size_items_size; key_neighbor_item1++)
         {
