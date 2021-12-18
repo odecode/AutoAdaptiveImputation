@@ -12,7 +12,9 @@
 #include <omp.h>
 #include "users.h"
 #include "ratingmatrices.h"
-#include "related.h"
+#include "related_vcl.h"
+
+//#include "related.h"
 using namespace std;
 using namespace std::chrono;
 // const int nusers = 943; // number of users in matrix
@@ -127,8 +129,8 @@ map<pair<int,int>,float> create_simlist(int** matrix){
 
 
 
-float** imputate_matrix(int* user, int* item, int** matrix, map<pair<int,int>,float> simlist){
-    cout << "in imp matrix\n";
+float** imputate_matrix(int user, int item, int** matrix, map<pair<int,int>,float> simlist){
+    //cout << "in imp matrix\n";
     /*
     Matrix imputation function
     */
@@ -154,23 +156,31 @@ float** imputate_matrix(int* user, int* item, int** matrix, map<pair<int,int>,fl
 
     for(int i = 0; i < nusers; ++i){
         for(int j = 0; j < nitems; ++j){
-            impmatrix[i][j] = float(matrix[i][j]);
+            impmatrix[i][j] = (float) matrix[i][j];
         }
     }
-    int key_neigh_size_users_size = key_neigh.rel_users.rel_users_size;
-    int key_neigh_size_items_size = key_neigh.rel_items.rel_items_size;
+
+    
+
+    int key_neigh_size_users_size = nusers;
+    int key_neigh_size_items_size = nusers*nitems;
+    // int key_neigh_size_users_size = key_neigh.rel_users.rel_users_size;
+    // int key_neigh_size_items_size = key_neigh.rel_items.rel_items_size;
     //#pragma omp parallel for
     for(int key_neighbor_user1 = 0; key_neighbor_user1 < key_neigh_size_users_size; key_neighbor_user1++){
+        int user2 = key_neigh.rel_users.rel_users[key_neighbor_user1];
+        if(user2 == -1) continue;
         for (int  key_neighbor_item1 = 0; key_neighbor_item1 < key_neigh_size_items_size; key_neighbor_item1++)
         {
             
-        int user2 = key_neigh.rel_users.rel_users[key_neighbor_user1];
         int item2 = key_neigh.rel_items.rel_items[key_neighbor_item1];
+        if(item2 == -1) continue;
+        
         int rating = matrix[user2][item2];
         if(rating == 0){
             // find n (set to 20) key neighbors of current key neighbor of target user
             //vector<vector<int>> key_neigh_knn = get_key_neighbors(user2,entry[1],matrix,20,alluserrels);
-            keyNeighbors key_neigh_knn = get_key_neighbors(&allusers[user2],&allitems[item2],matrix,20,nusers,nitems);
+            keyNeighbors key_neigh_knn = get_key_neighbors(allusers[user2],allitems[item2],matrix,20,nusers,nitems);
             //int current_key_neighbor = entry[0];
             //int current_key_neighbor = key_neigh_knn.rel_users.rel_users[user2];
             //int current_item = key_neigh_knn.rel_items.rel_items[key_neighbor_item1];
@@ -202,6 +212,8 @@ float** imputate_matrix(int* user, int* item, int** matrix, map<pair<int,int>,fl
             if(sum_below == 0.0f){sum_below = 0.001f;}
             float imp_rating = mean_cur_key_neigh+(sum_above/sum_below);
             impmatrix[current_key_neighbor][current_item] = abs(imp_rating);
+            free(key_neigh_knn.rel_users.rel_users);
+            free(key_neigh_knn.rel_items.rel_items);
             //impmatrix[current_key_neighbor*nitems+current_item] = abs(imp_rating);
             //cout << "imputating " << imp_rating << " at " << current_key_neighbor << " " << current_item << endl;
         }      
@@ -212,16 +224,18 @@ float** imputate_matrix(int* user, int* item, int** matrix, map<pair<int,int>,fl
         //vector<int> entry = key_neigh[i];
         //int rating = entry[2];
 //key_neigh.clear();
+free(key_neigh.rel_items.rel_items);
+free(key_neigh.rel_users.rel_users);
 return impmatrix;
 }
 
-float predict_rating(int* user,int* item, int** matrix, map<pair<int,int>,float> simlist){
+float predict_rating(int user,int item, int** matrix, map<pair<int,int>,float> simlist){
     /*
     Predicts rating from target user to target item
     Find Key neighbors, imputate matrix with artificial ratings, calculate predicted rating according to formula
     */
-    cout << "in predict rating\n";
-    int rating = matrix[*user][*item];
+    //cout << "in predict rating\n";
+    int rating = matrix[user][item];
     //int rating = matrix[user*nitems+item];
     if( rating != 0){
         cout << "Rating already observed" << endl;
@@ -230,17 +244,19 @@ float predict_rating(int* user,int* item, int** matrix, map<pair<int,int>,float>
     else{
         float** imp_matrix = imputate_matrix(user,item,matrix,simlist);
         keyNeighbors P = get_key_neighbors(user,item,matrix,20,nusers,nitems);
-        int pneighsize = P.rel_users.rel_users_size;
+        //int pneighsize = P.rel_users.rel_users_size;
+        int pneighsize = nusers;
         float sum_above = 0.0f;
         float sum_below = 0.0f;
-        float mean_user = calc_row_mean(*user,matrix);
+        float mean_user = calc_row_mean(user,matrix);
         for(int i = 0; i < pneighsize; i++){
             //vector<int> entry = P[i];
             int neighbor = P.rel_users.rel_users[i];
-            pair<int,int> p = make_pair(*user,neighbor);
+            if(neighbor == -1) continue;
+            pair<int,int> p = make_pair(user,neighbor);
             float sim = simlist.at(p);
             float mean_neighbor = calc_row_mean(neighbor,matrix);
-            sum_above += sim*(imp_matrix[neighbor][*item]-mean_neighbor);
+            sum_above += sim*(imp_matrix[neighbor][item]-mean_neighbor);
             //sum_above += sim*(imp_matrix[neighbor*nitems+item]-mean_neighbor);
             sum_below += sim;
         }
@@ -252,9 +268,12 @@ float predict_rating(int* user,int* item, int** matrix, map<pair<int,int>,float>
 
         //P.clear();
         // for(int i = 0; i < nusers; i++){
-        //     delete[] imp_matrix[i];
+        //     free(imp_matrix[i]);
         // }
-        delete[] imp_matrix;
+        // free(imp_matrix);
+        free(P.rel_users.rel_users);
+        free(P.rel_items.rel_items);
+        //delete[] imp_matrix;
         return predicted_rating;
     }
 
@@ -323,7 +342,7 @@ int main(int argc, char** argv){
        int* puser = &user;
        int* pitem = &item;
        start = high_resolution_clock::now();
-       float pred = predict_rating(puser,pitem,rating_matrix,simlist);
+       float pred = predict_rating(user,item,rating_matrix,simlist);
        stop = high_resolution_clock::now();
        time_span = duration_cast<duration<double>>(stop-start);
        total_time += time_span;
