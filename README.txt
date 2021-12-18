@@ -4,3 +4,6 @@ Included:
 -the paper
 -MovieLens benchmarking data file (MovieLens 100k)
 -c++ implementation code
+
+In branch vcl I have a vectorized version using Agner Fog's vector class library (https://www.agner.org/optimize/#vectorclass).
+compile with g++ -std=c++17 -I./version2-2.01.04 newmain.cpp -o newmain
