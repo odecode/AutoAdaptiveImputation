@@ -162,70 +162,63 @@ float** imputate_matrix(int user, int item, int** matrix, map<pair<int,int>,floa
 
     
 
-    int key_neigh_size_users_size = nusers;
-    int key_neigh_size_items_size = nusers*nitems;
+    int key_neigh_size_users_size = key_neigh.rel_users.rel_users_size;
+    int key_neigh_size_items_size = key_neigh.rel_items.rel_items_size;
     // int key_neigh_size_users_size = key_neigh.rel_users.rel_users_size;
     // int key_neigh_size_items_size = key_neigh.rel_items.rel_items_size;
     //#pragma omp parallel for
-    for(int key_neighbor_user1 = 0; key_neighbor_user1 < key_neigh_size_users_size; key_neighbor_user1++){
-        int user2 = key_neigh.rel_users.rel_users[key_neighbor_user1];
-        if(user2 == -1) continue;
-        for (int  key_neighbor_item1 = 0; key_neighbor_item1 < key_neigh_size_items_size; key_neighbor_item1++)
-        {
-            
-        int item2 = key_neigh.rel_items.rel_items[key_neighbor_item1];
-        if(item2 == -1) continue;
-        
-        int rating = matrix[user2][item2];
-        if(rating == 0){
-            // find n (set to 20) key neighbors of current key neighbor of target user
-            //vector<vector<int>> key_neigh_knn = get_key_neighbors(user2,entry[1],matrix,20,alluserrels);
-            keyNeighbors key_neigh_knn = get_key_neighbors(allusers[user2],allitems[item2],matrix,20,nusers,nitems);
-            //int current_key_neighbor = entry[0];
-            //int current_key_neighbor = key_neigh_knn.rel_users.rel_users[user2];
-            //int current_item = key_neigh_knn.rel_items.rel_items[key_neighbor_item1];
-            int current_key_neighbor = user2;
-            int current_item = item2;
-            //int current_item = entry[1];
-            //cout << key_neighbor_user1 << endl;
-            float mean_cur_key_neigh = calc_row_mean(current_key_neighbor,matrix);
-            float sum_above = 0.0f;
-            float sum_below = 0.0f;
-            //loop through current key neighbors key neighbors
-            //for each pair of neighbors, find similarity, calculate mean values, sum according to formula
-            int knknnsize = key_neigh_knn.rel_users.rel_users_size;
-            for(int j = 0; j < knknnsize; j++){
-               //vector<int> key_neigh_knn_entry = key_neigh_knn[j];
-               int key_neighbors_neighbor = key_neigh_knn.rel_users.rel_users[j];
-               if(key_neighbors_neighbor != current_key_neighbor){
-                   pair<int,int> p = make_pair(current_key_neighbor,key_neighbors_neighbor);
-                   //cout << p.first << " " << p.second << endl;
-                   float sim = simlist.at(p);
-                   float mean_key_neigh_neigh = calc_row_mean(key_neighbors_neighbor,matrix);
-                  //cout << key_neighbors_neighbor << " " << current_item << endl;
-                  sum_above += sim*((matrix[key_neighbors_neighbor][current_item]-mean_key_neigh_neigh));
-                  //sum_above += sim*((matrix[key_neighbors_neighbor*nitems+current_item]-mean_key_neigh_neigh));
-                  sum_below += sim;
+    
 
-               }
-            }
+    Node* current_user = key_neigh.rel_users.rel_users;
+    Node* current_item = key_neigh.rel_items.rel_items;
+
+    int currentuser_data = current_user->data;
+    int currentitem_data = current_item->data;
+
+    while(current_user->next != NULL && currentuser_data < nusers && currentuser_data >= 0){
+        while(current_item->next != NULL && currentitem_data < nitems && currentitem_data >= 0){
+            //cout << currentuser_data << " " << currentitem_data << endl;
+            int rating = matrix[currentuser_data][currentitem_data];
+            if(rating == 0){
+                float mean_cur_key_neigh = calc_row_mean(currentuser_data,matrix);
+                float sum_above = 0.0f;
+                float sum_below = 0.0f;
+                keyNeighbors key_neigh_knn = get_key_neighbors(currentuser_data,currentitem_data,matrix,20,nusers,nitems);
+                //int current_key_neighbor = entry[0];
+                //int current_item = entry[1];
+                
+                
+                
+                
+
+                Node* key_neighbors_neighbor = key_neigh_knn.rel_users.rel_users;
+                int key_neigh_neigh = key_neighbors_neighbor->data;
+                while(key_neighbors_neighbor->next != NULL){
+                    if(key_neigh_neigh != currentuser_data){
+                        pair<int,int> p = make_pair(currentuser_data,key_neigh_neigh);
+                        float sim = simlist.at(p);
+                        float mean_key_neigh_neigh = calc_row_mean(key_neigh_neigh,matrix);
+                  
+                        sum_above += sim*((matrix[key_neigh_neigh][currentitem_data]-mean_key_neigh_neigh));
+                        sum_below += sim;
+                        
+                        key_neighbors_neighbor = key_neighbors_neighbor->next;
+                        key_neigh_neigh = key_neighbors_neighbor->data;
+                    }
+                }
             if(sum_below == 0.0f){sum_below = 0.001f;}
             float imp_rating = mean_cur_key_neigh+(sum_above/sum_below);
-            impmatrix[current_key_neighbor][current_item] = abs(imp_rating);
-            free(key_neigh_knn.rel_users.rel_users);
-            free(key_neigh_knn.rel_items.rel_items);
-            //impmatrix[current_key_neighbor*nitems+current_item] = abs(imp_rating);
-            //cout << "imputating " << imp_rating << " at " << current_key_neighbor << " " << current_item << endl;
-        }      
-
-    }
+            impmatrix[currentuser_data][currentitem_data] = abs(imp_rating);
+            } // end if rating == 0
+            current_item = current_item->next;
+            currentitem_data = current_item->data;
         }
-        
-        //vector<int> entry = key_neigh[i];
-        //int rating = entry[2];
-//key_neigh.clear();
-free(key_neigh.rel_items.rel_items);
-free(key_neigh.rel_users.rel_users);
+        current_user = current_user->next;
+        currentuser_data = current_user->data;
+    }
+
+
+    
 return impmatrix;
 }
 
@@ -245,20 +238,23 @@ float predict_rating(int user,int item, int** matrix, map<pair<int,int>,float> s
         float** imp_matrix = imputate_matrix(user,item,matrix,simlist);
         keyNeighbors P = get_key_neighbors(user,item,matrix,20,nusers,nitems);
         //int pneighsize = P.rel_users.rel_users_size;
-        int pneighsize = nusers;
+        Node* neighbor = P.rel_users.rel_users;
+        int neighbordata = neighbor->data;
+        
+        int pneighsize = P.rel_users.rel_users_size;
         float sum_above = 0.0f;
         float sum_below = 0.0f;
         float mean_user = calc_row_mean(user,matrix);
         for(int i = 0; i < pneighsize; i++){
             //vector<int> entry = P[i];
-            int neighbor = P.rel_users.rel_users[i];
-            if(neighbor == -1) continue;
-            pair<int,int> p = make_pair(user,neighbor);
+            pair<int,int> p = make_pair(user,neighbordata);
             float sim = simlist.at(p);
-            float mean_neighbor = calc_row_mean(neighbor,matrix);
-            sum_above += sim*(imp_matrix[neighbor][item]-mean_neighbor);
+            float mean_neighbor = calc_row_mean(neighbordata,matrix);
+            sum_above += sim*(imp_matrix[neighbordata][item]-mean_neighbor);
             //sum_above += sim*(imp_matrix[neighbor*nitems+item]-mean_neighbor);
             sum_below += sim;
+            neighbor = neighbor->next;
+            neighbordata = neighbor->data;
         }
         float predicted_rating = mean_user+(sum_above/sum_below);
         // if(predicted_rating > 5.0){predicted_rating = 5.0;}
@@ -266,14 +262,7 @@ float predict_rating(int user,int item, int** matrix, map<pair<int,int>,float> s
         predicted_rating = predicted_rating > 5.0f ? 5.0f : predicted_rating;
         predicted_rating = predicted_rating < 0.0f ? 0.0f : predicted_rating;
 
-        //P.clear();
-        // for(int i = 0; i < nusers; i++){
-        //     free(imp_matrix[i]);
-        // }
-        // free(imp_matrix);
-        free(P.rel_users.rel_users);
-        free(P.rel_items.rel_items);
-        //delete[] imp_matrix;
+        // free data structures
         return predicted_rating;
     }
 

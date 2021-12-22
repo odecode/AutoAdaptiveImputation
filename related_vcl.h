@@ -19,8 +19,13 @@
 using namespace std::chrono;
 using namespace std;
 
+struct Node{
+    struct Node* next;
+    int data;
+};
+
 struct relatedUsers{
-    int *rel_users;
+    Node* rel_users;
     int rel_users_size;
     int user;
 };
@@ -88,20 +93,48 @@ relatedUsers get_related_users(int user, int item, int** matrix, int nusers, int
     //     cout << rel_users_arr[i] << " ";
     // }
     // cout << endl;
+    Node* n = (struct Node*)malloc(sizeof(struct Node));
+    n->next = NULL;
+    n->data = -1;
+    Node* prev[1] = {n};
+    
+
+    for (int i = 0; i < nusers; i++)
+    {
+        if(rel_users_arr[i] == -1) continue;
+        else{
+            Node* cur = prev[0];
+            cur->data = rel_users_arr[i];
+            Node* newnode = (struct Node*)malloc(sizeof(struct Node));
+            newnode->next = NULL;
+            cur->next = newnode;
+            prev[0] = newnode;
+            ++reluserssize;
+        }
+    }
     
  
-    
     relatedUsers rel_users;
-    rel_users.rel_users = rel_users_arr;
+    rel_users.rel_users = n;
     rel_users.user = user;
     rel_users.rel_users_size = reluserssize;
-
+    free(rel_users_arr);
+    //cout << "Showing all rel user nodes\n";
+    // Node s = 
+    // for (int i = 0; i < reluserssize; i++)
+    // {
+    //     Node nnode = *n.next;
+    //     cout << nnode.data << " ";
+    //     n = nnode;
+    // }
+    
     return rel_users;
 }
 
 struct relatedItems{
-    int *rel_items;
+    Node* rel_items;
     int item;
+    int rel_items_size;
 };
 
 relatedItems get_related_items(int user, int item, int** matrix, relatedUsers rel_use, int nusers, int nitems){
@@ -121,13 +154,14 @@ relatedItems get_related_items(int user, int item, int** matrix, relatedUsers re
         rel_items[i] = -1;
     }
 
-    for (int rel_user_index = 0; rel_user_index < nusers; rel_user_index++){
-        int user2 = rel_use.rel_users[rel_user_index];
-        if(user2 == -1) continue;
+    Node* user2 = rel_use.rel_users;
+    int user2data = user2->data;
+    
+   while (user2->next != NULL){
         for (int cur_item = 0; cur_item < nitems-leftOvernItems; cur_item+=veclen)
         {
             Vec8i user1vec(user);
-            Vec8i user2vec(user2);
+            Vec8i user2vec(user2data);
             Vec8i currentitemvec(cur_item,cur_item+1,cur_item+2,cur_item+3,cur_item+4,cur_item+5,cur_item+6,cur_item+7);
             
             Vec8i ratingvec_user1, ratingvec_user2;
@@ -135,7 +169,7 @@ relatedItems get_related_items(int user, int item, int** matrix, relatedUsers re
             for (int i = 0; i < veclen; i++)
             {
                 user1ratings[i] = matrix[user][cur_item+i];
-                user2ratings[i] = matrix[user2][cur_item+i];
+                user2ratings[i] = matrix[user2data][cur_item+i];
             }
             ratingvec_user1.load(user1ratings);
             ratingvec_user2.load(user2ratings);
@@ -147,21 +181,34 @@ relatedItems get_related_items(int user, int item, int** matrix, relatedUsers re
             Vec8ib related = (ratingvec_user1 != 0) && (ratingvec_user2 != 0);
             currentitemvec = select(related,currentitemvec,-1);
             currentitemvec.store(&rel_items[cur_item]);
-
-        } 
+        }
+        user2 = user2->next;
+        user2data = user2->data;
     }
-
-    // cout << "related items\n\n";
-    // for (int i = 0; i < rel_items_size; i++)
-    // {
-
-    //     if(rel_items[i] != -1) cout << rel_items[i] << " ";
-    // }
     
+   
     
+    Node* n = (struct Node*)malloc(sizeof(struct Node));
+    Node* prev[1] = {n};
+    int actual_rel_items_size = 0;
+    for (int i = 0; i < nusers; i++)
+    {
+        if(rel_items[i] == -1) continue;
+        else{
+            Node* cur = prev[0];
+            cur->data = rel_items[i];
+            Node* newnode = (struct Node*)malloc(sizeof(struct Node));
+            cur->next = newnode;
+            prev[0] = newnode;
+            ++actual_rel_items_size;
+        }
+    }
+     
     relatedItems rel_it;
-    rel_it.rel_items = rel_items;
+    rel_it.rel_items = n;
+    rel_it.rel_items_size = actual_rel_items_size;
     rel_it.item = item;
+    free(rel_items);
     
     return rel_it;
 }
