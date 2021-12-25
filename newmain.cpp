@@ -262,7 +262,9 @@ float predict_rating(int user,int item, int** matrix, map<pair<int,int>,float> s
         predicted_rating = predicted_rating > 5.0f ? 5.0f : predicted_rating;
         predicted_rating = predicted_rating < 0.0f ? 0.0f : predicted_rating;
 
-        // free data structures
+        free(imp_matrix[0]);
+        free(imp_matrix);
+        
         return predicted_rating;
     }
 
