@@ -25,7 +25,7 @@ int allusers[943];
 int allitems[1682];
 
 
-float** imputate_matrix(int user, int item, int** matrix, float** simlist){
+float** imputate_matrix(int user, int item, int** matrix, float** simlist, int* rel_users_arr, int* rel_items){
     //cout << "in imp matrix\n";
     /*
     Matrix imputation function
@@ -33,7 +33,7 @@ float** imputate_matrix(int user, int item, int** matrix, float** simlist){
     
     // find key neighbors of target user and item
     //vector<vector<int>> key_neigh = get_key_neighbors(user,item,matrix,nitems,alluserrels);
-    keyNeighbors key_neigh = get_key_neighbors(user,item,matrix,nusers,nusers,nitems);
+    keyNeighbors key_neigh = get_key_neighbors(user,item,matrix,nusers,nusers,nitems,rel_users_arr,rel_items);
     
     // float** impmatrix =new float*[nusers];
     // for(int i = 0; i < nusers; i++){
@@ -91,7 +91,7 @@ float** imputate_matrix(int user, int item, int** matrix, float** simlist){
                 float mean_cur_key_neigh = calc_row_mean(nitems,current_user,matrix);
                 float sum_above = 0.0f;
                 float sum_below = 0.0f;
-                keyNeighbors key_neigh_knn = get_key_neighbors(current_user,current_item,matrix,20,nusers,nitems);
+                keyNeighbors key_neigh_knn = get_key_neighbors(current_user,current_item,matrix,20,nusers,nitems,rel_users_arr,rel_items);
                 std::vector<int> key_neighbors_neighbors = key_neigh_knn.rel_users;
                 int key_neigh_neigh = key_neighbors_neighbors[0];
                 for(int x = 0; x < key_neighbors_neighbors.size(); x++){
@@ -131,8 +131,11 @@ float predict_rating(int user,int item, int** matrix, float** simlist){
         return -1.0f;
     }
     else{
-        float** imp_matrix = imputate_matrix(user,item,matrix,simlist);
-        keyNeighbors P = get_key_neighbors(user,item,matrix,20,nusers,nitems);
+        int rel_items_size = nusers*nitems;
+        int* rel_items = (int*) malloc(rel_items_size*sizeof(int));
+        int *rel_users_arr = (int*) malloc(nusers*sizeof(int));
+        float** imp_matrix = imputate_matrix(user,item,matrix,simlist,rel_users_arr,rel_items);
+        keyNeighbors P = get_key_neighbors(user,item,matrix,20,nusers,nitems,rel_users_arr,rel_items);
         //int pneighsize = P.rel_users.rel_users_size;
         // Node* neighbor = P.rel_users.rel_users;
         // int neighbordata = neighbor->data;
@@ -162,6 +165,8 @@ float predict_rating(int user,int item, int** matrix, float** simlist){
 
         free(imp_matrix[0]);
         free(imp_matrix);
+        free(rel_items);
+        free(rel_users_arr);
         
         return predicted_rating;
     }

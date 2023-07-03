@@ -14,8 +14,8 @@ struct keyNeighbors{
     int item;
 };
 
-std::vector<int> get_related_users(int user, int item, int** matrix, int nusers, int nitems){
-    int *rel_users_arr = (int*) malloc(nusers*sizeof(int));
+std::vector<int> get_related_users(int user, int item, int** matrix, int nusers, int nitems, int* rel_users_arr){
+    // int *rel_users_arr = (int*) malloc(nusers*sizeof(int));
     int veclen = 8;
     int leftOverFromArrayEnd = nusers % veclen;
     Vec8i minus1(-1);
@@ -75,13 +75,13 @@ std::vector<int> get_related_users(int user, int item, int** matrix, int nusers,
         }
     }
     rel_users.resize(reluser_index);
-    free(rel_users_arr);
+    // free(rel_users_arr);
     return rel_users;
 }
 
-std::vector<int> get_related_items(int user, int item, int** matrix, std::vector<int> rel_use, int nusers, int nitems){
+std::vector<int> get_related_items(int user, int item, int** matrix, std::vector<int> rel_use, int nusers, int nitems, int* rel_items){
     const int rel_items_size = nusers*nitems;
-    int* rel_items = (int*) malloc(rel_items_size*sizeof(int));
+    // int* rel_items = (int*) malloc(rel_items_size*sizeof(int));
     Vec8i minus1(-1);
     const int veclen = 8;
     int leftOverFromArrayEnd = (rel_items_size) % veclen;
@@ -134,15 +134,15 @@ std::vector<int> get_related_items(int user, int item, int** matrix, std::vector
         }
     }
     rel_it.resize(actual_rel_items_size);
-    free(rel_items);
+    // free(rel_items);
     return rel_it;
 }
 
-keyNeighbors get_key_neighbors(int user, int item, int** matrix, int size, int nusers, int nitems){
+keyNeighbors get_key_neighbors(int user, int item, int** matrix, int size, int nusers, int nitems, int* rel_users_arr, int* rel_items_arr){
 
     keyNeighbors keyneighbors;
-    std::vector<int> relUsers = get_related_users(user,item,matrix,nusers,nitems);
-    std::vector<int> relItems = get_related_items(user,item,matrix,relUsers,nusers,nitems);
+    std::vector<int> relUsers = get_related_users(user,item,matrix,nusers,nitems,rel_users_arr);
+    std::vector<int> relItems = get_related_items(user,item,matrix,relUsers,nusers,nitems,rel_items_arr);
 
     keyneighbors.rel_users = relUsers;
     keyneighbors.rel_items = relItems;
