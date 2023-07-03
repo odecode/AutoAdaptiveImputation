@@ -140,9 +140,11 @@ float predict_rating(int user,int item, int** matrix, float** simlist){
         // Node* neighbor = P.rel_users.rel_users;
         // int neighbordata = neighbor->data;
         std::vector<int> neighbors = P.rel_users;
-        int neighbordata = neighbors[0];
-
         const int pneighsize = P.rel_users.size();
+        int neighbordata = -1;
+        if(pneighsize > 0) neighbordata = neighbors[0];
+
+        // int neighbordata = neighbors[0];
         float sum_above = 0.0f;
         float sum_below = 0.0f;
         float mean_user = calc_row_mean(nitems,user,matrix);
