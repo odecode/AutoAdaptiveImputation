@@ -191,7 +191,6 @@ int main(int argc, char** argv){
     
     
     auto start = high_resolution_clock::now();
-    pair<int, int> *pairs = new pair<int,int>[888306];
     float** simlist = create_simlist(rating_matrix,nusers,nitems);
     auto stop = high_resolution_clock::now();
     duration<double> time_span = duration_cast<duration<double>>(stop-start);
