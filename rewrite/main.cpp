@@ -12,7 +12,7 @@
 #include <omp.h>
 #include "users.h"
 #include "ratingmatrices.h"
-#include "related_vcl.h"
+#include "newrelated_vcl.h"
 #include "simlist.h"
 
 //#include "related.h"
@@ -58,63 +58,62 @@ float** imputate_matrix(int user, int item, int** matrix, float** simlist){
 
     
 
-    int key_neigh_size_users_size = key_neigh.rel_users.rel_users_size;
-    int key_neigh_size_items_size = key_neigh.rel_items.rel_items_size;
+    int key_neigh_size_users_size = key_neigh.rel_users.size();
+    int key_neigh_size_items_size = key_neigh.rel_items.size();
     // int key_neigh_size_users_size = key_neigh.rel_users.rel_users_size;
     // int key_neigh_size_items_size = key_neigh.rel_items.rel_items_size;
     //#pragma omp parallel for
     
 
-    Node* current_user = key_neigh.rel_users.rel_users;
-    Node* current_item = key_neigh.rel_items.rel_items;
+    // Node* current_user = key_neigh.rel_users.rel_users;
+    // Node* current_item = key_neigh.rel_items.rel_items;
 
-    int currentuser_data = current_user->data;
-    int currentitem_data = current_item->data;
+    // int currentuser_data = current_user->data;
+    // int currentitem_data = current_item->data;
+    
+    int rel_use_size = key_neigh.rel_users.size();
+    int rel_it_size = key_neigh.rel_items.size();
+    int current_user = -1;
+    int current_item = -1;
 
-    while(current_user->next != NULL && currentuser_data < nusers && currentuser_data >= 0){
-        while(current_item->next != NULL && currentitem_data < nitems && currentitem_data >= 0){
-            //cout << currentuser_data << " " << currentitem_data << endl;
-            int rating = matrix[currentuser_data][currentitem_data];
+    if(rel_use_size > 0) int current_user = key_neigh.rel_users[0];
+    if(rel_it_size > 0) int current_item = key_neigh.rel_items[0];
+    
+    // int current_item = key_neigh.rel_items[0];
+    int curuserindex = 0;
+    int curitemindex = 0;
+    // cout << curuserindex << " " << current_user << " " << current_item << endl;
+    while(curuserindex < rel_use_size && current_user < nusers && current_user >= 0){
+        // cout << "curuserindex " << curuserindex << endl;
+        while(curitemindex < rel_it_size && current_item < nitems && current_item >= 0){
+            int rating = matrix[current_user][current_item];
             if(rating == 0){
-                float mean_cur_key_neigh = calc_row_mean(nitems,currentuser_data,matrix);
+                float mean_cur_key_neigh = calc_row_mean(nitems,current_user,matrix);
                 float sum_above = 0.0f;
                 float sum_below = 0.0f;
-                keyNeighbors key_neigh_knn = get_key_neighbors(currentuser_data,currentitem_data,matrix,20,nusers,nitems);
-                //int current_key_neighbor = entry[0];
-                //int current_item = entry[1];
-                
-                
-                
-                
-
-                Node* key_neighbors_neighbor = key_neigh_knn.rel_users.rel_users;
-                int key_neigh_neigh = key_neighbors_neighbor->data;
-                while(key_neighbors_neighbor->next != NULL){
-                    if(key_neigh_neigh != currentuser_data){
-                        // pair<int,int> p = make_pair(currentuser_data,key_neigh_neigh);
-                        // float sim = simlist.at(p);
-                        float sim = simlist[currentuser_data][key_neigh_neigh];
+                keyNeighbors key_neigh_knn = get_key_neighbors(current_user,current_item,matrix,20,nusers,nitems);
+                std::vector<int> key_neighbors_neighbors = key_neigh_knn.rel_users;
+                int key_neigh_neigh = key_neighbors_neighbors[0];
+                for(int x = 0; x < key_neighbors_neighbors.size(); x++){
+                    if(key_neigh_neigh != current_user){
+                        float sim = simlist[current_user][key_neigh_neigh];
                         float mean_key_neigh_neigh = calc_row_mean(nitems,key_neigh_neigh,matrix);
                   
-                        sum_above += sim*((matrix[key_neigh_neigh][currentitem_data]-mean_key_neigh_neigh));
+                        sum_above += sim*((matrix[key_neigh_neigh][current_item]-mean_key_neigh_neigh));
                         sum_below += sim;
                         
-                        key_neighbors_neighbor = key_neighbors_neighbor->next;
-                        key_neigh_neigh = key_neighbors_neighbor->data;
+                        key_neigh_neigh = key_neighbors_neighbors[x];
                     }
                 }
             if(sum_below == 0.0f){sum_below = 0.001f;}
             float imp_rating = mean_cur_key_neigh+(sum_above/sum_below);
-            impmatrix[currentuser_data][currentitem_data] = abs(imp_rating);
-            } // end if rating == 0
-            current_item = current_item->next;
-            currentitem_data = current_item->data;
+            impmatrix[current_user][current_item] = abs(imp_rating);
+            
+            }
+            curitemindex++;
         }
-        current_user = current_user->next;
-        currentuser_data = current_user->data;
+        curuserindex++;
     }
-
-
     
 return impmatrix;
 }
@@ -135,10 +134,12 @@ float predict_rating(int user,int item, int** matrix, float** simlist){
         float** imp_matrix = imputate_matrix(user,item,matrix,simlist);
         keyNeighbors P = get_key_neighbors(user,item,matrix,20,nusers,nitems);
         //int pneighsize = P.rel_users.rel_users_size;
-        Node* neighbor = P.rel_users.rel_users;
-        int neighbordata = neighbor->data;
-        
-        int pneighsize = P.rel_users.rel_users_size;
+        // Node* neighbor = P.rel_users.rel_users;
+        // int neighbordata = neighbor->data;
+        std::vector<int> neighbors = P.rel_users;
+        int neighbordata = neighbors[0];
+
+        const int pneighsize = P.rel_users.size();
         float sum_above = 0.0f;
         float sum_below = 0.0f;
         float mean_user = calc_row_mean(nitems,user,matrix);
@@ -150,8 +151,8 @@ float predict_rating(int user,int item, int** matrix, float** simlist){
             sum_above += sim*(imp_matrix[neighbordata][item]-mean_neighbor);
             //sum_above += sim*(imp_matrix[neighbor*nitems+item]-mean_neighbor);
             sum_below += sim;
-            neighbor = neighbor->next;
-            neighbordata = neighbor->data;
+            // neighbor = neighbor->next;
+            neighbordata = neighbors[i];
         }
         float predicted_rating = mean_user+(sum_above/sum_below);
         // if(predicted_rating > 5.0){predicted_rating = 5.0;}
